@@ -5,7 +5,11 @@ const baseURL = 'https://eventhub.rahulshettyacademy.com';
 // finishes before the next one runs. Without `await`, the test would race ahead
 // before pages load or elements render, causing flaky failures and timing issues.
 async function openLoginPage(page) {
-await page.goto(baseURL+'/login');
+await page.goto('/login');
 await expect(page.getByText('Sign in to EventHub')).toBeVisible();
+}
+
+function getEmailField(page) {
+    return page.getByPlaceholder('you@email.com');
 }
 module.exports = {openLoginPage, baseURL};
