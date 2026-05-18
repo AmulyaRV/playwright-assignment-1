@@ -1,5 +1,11 @@
 const {test, expect} = require('@playwright/test');
 const { openLoginPage } = require('../helpers/login-helper');
+/*
+ page fixture vs browser context 
+ - The page fixture is one ready-to-use browser tab Playwright provides for the test. It comes pre-loaded with a fresh, isolated context and is automatically cleaned up after the test runs.
+ - A `browser context` is a separate browser session — like an incognito window. A context can hold multiple pages (tabs) and has its own cookies, localStorage, sessionStorage, and cache.
+- A fresh context (created via `browser.newContext()`) starts with completely isolated state — nothing from other contexts (including the fixture's context)  carries over.*/
+
 test('EventHub login page loads', async ({page}) => {
     await page.goto('/login');
     await expect(page).toHaveTitle(/EventHub/i);
