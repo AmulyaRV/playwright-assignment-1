@@ -2,13 +2,13 @@ const {test, expect} = require('@playwright/test');
 const{login, getEventCards, parseSeatCount} = require('../helpers/event-hub-helper');
 
 test('login and open the Events page', async({page})=>{
-await login(page);
+await login(page, 'amulyavarma21@gmail.com', 'Test@123');
 await page.getByRole('link',{name: /browse events/i}).first().click();
 await expect(page.getByRole('heading',{name: 'Upcoming Events'})).toBeVisible();
 })
 
 test('filter events by keyword, category, and city', async({page}) => {
-    await login(page);
+    await login(page, 'amulyavarma21@gmail.com', 'Test@123');
     await page.getByRole('link',{name: /browse events/i}).first().click();
     await expect(page.getByRole('heading',{name:'Upcoming Events'})).toBeVisible();
     await page.locator('input[placeholder="Search events, venues…"]').fill("World")
@@ -37,7 +37,7 @@ test('filter events by keyword, category, and city', async({page}) => {
     await expect(page.locator('p',{hasText: eventPriceText})).toBeVisible();
 })
 test('clear filters and verify all events are visible', async({page}) => {
-    await login(page);
+    await login(page, 'amulyavarma21@gmail.com', 'Test@123');
     await page.getByRole('link',{name: /browse events/i}).first().click();
     await expect(page.getByRole('heading',{name:'Upcoming Events'})).toBeVisible();
     await page.locator('input[placeholder="Search events, venues…"]').fill("");
