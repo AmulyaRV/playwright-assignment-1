@@ -1,4 +1,5 @@
 const { expect } = require('@playwright/test');
+const baseURL = 'https://eventhub.rahulshettyacademy.com';
 const email = 'amulyavarma21@gmail.com'
 const password = 'Test@123'
 
@@ -99,4 +100,77 @@ async function openBookingDetailFromCard(card) {
   await card.getByRole('button', { name: 'View Details' }).click();
 }
 
-module.exports = { login, getEventCards, parseSeatCount, createBookingFromFilters, findBookingCardByRef, openBookingDetailFromCard };
+function parseCurrency(text) {
+    return parseFloat(text.replace(/[^0-9.]/g, ''));
+}
+
+function findEventCardByTitle(page, title) {
+    return page.getByTestId('event-card').filter({ hasText: title }).first();
+}
+
+function buildMockEvents() {
+  return [
+    {
+      id: 'mock-001',
+      title: 'Hyderabad Tech Conference 2026',
+      category: 'Conference',
+      city: 'Hyderabad',
+      price: 1500,
+      availableSeats: 120,
+    },
+    {
+      id: 'mock-002',
+      title: 'Delhi Music Festival 2026',
+      category: 'Festival',
+      city: 'Delhi',
+      price: 800,
+      availableSeats: 500,
+    },
+    {
+      id: 'mock-003',
+      title: 'Mumbai Rock Concert 2026',
+      category: 'Concert',
+      city: 'Mumbai',
+      price: 2200,
+      availableSeats: 350,
+    },
+    {
+      id: 'mock-004',
+      title: 'Bangalore Dev Workshop 2026',
+      category: 'Workshop',
+      city: 'Bangalore',
+      price: 500,
+      availableSeats: 60,
+    },
+  ];
+}
+
+async function installMockEventRoutes(page, mockEvents) {
+  await page.route('**/api/events', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(mockEvents),
+      total: mockEvents.length, 
+      page: 1,
+      limit: 12,
+    });
+  });
+}
+await page.route('**/api/events/**', (route) => {
+    const url = route.request().url();
+    const id = url.split('/api/events/')[1]?.split('?')[0];
+    const event = mockEvents.find((e) => String(e.id) === String(id));
+    if (event) {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: event }),
+      });
+    } else {
+      route.continue();
+    }
+  });
+
+
+module.exports = { login, getEventCards, parseSeatCount, createBookingFromFilters, findBookingCardByRef, openBookingDetailFromCard, parseCurrency, baseURL, findEventCardByTitle, buildMockEvents, installMockEventRoutes };
