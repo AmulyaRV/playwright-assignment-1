@@ -40,8 +40,8 @@ async function createBookingFromFilters(page, bookingData) {
     const matchingCards = cards.filter({ hasText: searchText });
     const matchingCard = matchingCards.first();
     await expect(page.getByTestId('event-card')).toHaveCount(1);
-   /*await matchingCard.getByRole('link', { name: 'Book Now' }).click();
-    await expect(page).toHaveURL(/events/);*/
+    /*await matchingCard.getByRole('link', { name: 'Book Now' }).click();
+     await expect(page).toHaveURL(/events/);*/
     await matchingCard.getByRole('link', { name: 'Book Now' }).click();
     await expect(page).toHaveURL(/\/events\/\d+/);  // matches /events/3 (detail)
     /*for (let i = 1; i < quantity; i++) {
@@ -93,11 +93,11 @@ async function parseSeatCount(text) {
     return parseInt(text, 10);
 }
 function findBookingCardByRef(page, bookingRef) {
-  return page.getByTestId('booking-card').filter({ hasText: bookingRef });
-  
+    return page.getByTestId('booking-card').filter({ hasText: bookingRef });
+
 }
 async function openBookingDetailFromCard(card) {
-  await card.getByRole('button', { name: 'View Details' }).click();
+    await card.getByRole('button', { name: 'View Details' }).click();
 }
 
 function parseCurrency(text) {
@@ -109,68 +109,68 @@ function findEventCardByTitle(page, title) {
 }
 
 function buildMockEvents() {
-  return [
-    {
-      id: 'mock-001',
-      title: 'Hyderabad Tech Conference 2026',
-      category: 'Conference',
-      city: 'Hyderabad',
-      price: 1500,
-      availableSeats: 120,
-    },
-    {
-      id: 'mock-002',
-      title: 'Delhi Music Festival 2026',
-      category: 'Festival',
-      city: 'Delhi',
-      price: 800,
-      availableSeats: 500,
-    },
-    {
-      id: 'mock-003',
-      title: 'Mumbai Rock Concert 2026',
-      category: 'Concert',
-      city: 'Mumbai',
-      price: 2200,
-      availableSeats: 350,
-    },
-    {
-      id: 'mock-004',
-      title: 'Bangalore Dev Workshop 2026',
-      category: 'Workshop',
-      city: 'Bangalore',
-      price: 500,
-      availableSeats: 60,
-    },
-  ];
+    return [
+        { id: 101, title: 'Hyderabad Tech Conference 2026', category: 'Conference', city: 'Hyderabad', price: 1500, availableSeats: 120, venue: 'HICC Hyderabad' },
+        { id: 102, title: 'Delhi Music Festival 2026', category: 'Festival', city: 'Delhi', price: 800, availableSeats: 500, venue: 'Jawaharlal Nehru Stadium' },
+        { id: 103, title: 'Mumbai Rock Concert 2026', category: 'Concert', city: 'Mumbai', price: 2200, availableSeats: 350, venue: 'MMRDA Grounds' },
+        { id: 104, title: 'Bangalore Dev Workshop 2026', category: 'Workshop', city: 'Bangalore', price: 500, availableSeats: 60, venue: 'NIMHANS Convention Centre' },
+    ];
 }
 
 async function installMockEventRoutes(page, mockEvents) {
-  await page.route('**/api/events', (route) => {
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(mockEvents),
-      total: mockEvents.length, 
-      page: 1,
-      limit: 12,
+    // Catalog route
+    await page.route('**/api/events*', (route) => {
+        const url = route.request().url();
+        const urlObj = new URL(url);
+        const search = urlObj.searchParams.get('search')?.toLowerCase() || '';
+        const city = urlObj.searchParams.get('city') || '';
+        const category = urlObj.searchParams.get('category') || '';
+
+        let filtered = mockEvents;
+        if (search) filtered = filtered.filter(e => e.title.toLowerCase().includes(search));
+        if (city) filtered = filtered.filter(e => e.city === city);
+        if (category) filtered = filtered.filter(e => e.category === category);
+
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                data: filtered,
+                total: filtered.length,
+                page: 1,
+                limit: 12,
+            }),
+        });
     });
-  });
+
+    // Detail route - separate pattern
+    await page.route('**/api/events/**', (route) => {
+        const url = route.request().url();
+        console.log('DETAIL INTERCEPTED:', url);
+        const id = url.split('/api/events/')[1]?.split('?')[0];
+        const event = mockEvents.find((e) => String(e.id) === String(id));
+        if (event) {
+            route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ data: event }),
+            });
+        } else {
+            route.continue();
+        }
+    });
 }
-await page.route('**/api/events/**', (route) => {
-    const url = route.request().url();
-    const id = url.split('/api/events/')[1]?.split('?')[0];
-    const event = mockEvents.find((e) => String(e.id) === String(id));
-    if (event) {
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: event }),
-      });
-    } else {
-      route.continue();
-    }
-  });
 
 
-module.exports = { login, getEventCards, parseSeatCount, createBookingFromFilters, findBookingCardByRef, openBookingDetailFromCard, parseCurrency, baseURL, findEventCardByTitle, buildMockEvents, installMockEventRoutes };
+module.exports = {
+    login,
+    createBookingFromFilters,
+    getEventCards,
+    parseSeatCount,
+    findBookingCardByRef,
+    openBookingDetailFromCard,
+    parseCurrency,
+    findEventCardByTitle,
+    buildMockEvents,
+    installMockEventRoutes,
+};
